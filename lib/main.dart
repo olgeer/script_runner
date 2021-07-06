@@ -49,6 +49,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   Map<String, String> scriptList = {};
   List<String> logs = [];
   String applicationDir = "";
+  String downloadDir = "";
   // PublicDirectory pd;
   bool debugMode = false;
   ScrollController logSc = ScrollController();
@@ -109,6 +110,15 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         print("${k.toString()}:${await k.status.isGranted}");
       }
     }
+
+    if (Platform.isMacOS) {
+      downloadDir = "${(await getDownloadsDirectory())?.path}";
+      // var r = await [Permission.storage, Permission.photos].request();
+      // for (Permission k in r.keys) {
+      //   print("${k.toString()}:${await k.status.isGranted}");
+      // }
+    }
+
     // pd = PublicDirectory();
     // await pd.init();
 
@@ -147,6 +157,9 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     switch (valueName) {
       case "android.applicationDir":
         ret = applicationDir;
+        break;
+      case "macos.downloadDir":
+        ret = downloadDir;
         break;
       default:
         // if("PublicDirectory".compareTo(valueName.split(".")[0])==0){
@@ -226,13 +239,15 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
       ToastGravity gravity = ToastGravity.BOTTOM,
       double fontSize = 16.0,
       bool debugMode = false}) {
-    Fluttertoast.showToast(
-      msg: msg,
-      toastLength: Toast.LENGTH_SHORT,
-      timeInSecForIosWeb: showInSec,
-      fontSize: fontSize,
-    );
-    if (debugMode) log("Toast:$msg");
+    if(Platform.isAndroid || Platform.isIOS){
+      Fluttertoast.showToast(
+        msg: msg,
+        toastLength: Toast.LENGTH_SHORT,
+        timeInSecForIosWeb: showInSec,
+        fontSize: fontSize,
+      );
+    }
+    if (debugMode||Platform.isMacOS) log("Toast:$msg");
   }
 
   void showScript(
@@ -470,15 +485,25 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                                   ),
                                 ),
                                 trailing: Container(
-                                    width: 120,
+                                    width: 160,
                                     alignment: Alignment.center,
                                     child: ButtonBar(
-                                        buttonMinWidth: 46,
+                                        buttonMinWidth: 40,
                                         alignment: MainAxisAlignment.center,
                                         children: [
                                           IconButton(
+                                              icon: Icon(FontAwesomeIcons.trashAlt,
+                                                  size: 24),
+                                              onPressed: (){
+                                                setState(() {
+                                                  scriptList.remove(key);
+                                                  cache.setString(
+                                                      "scriptList", jsonEncode(scriptList));
+                                                });
+                                              }),
+                                          IconButton(
                                               icon: Icon(FontAwesomeIcons.tools,
-                                                  size: 28),
+                                                  size: 24),
                                               onPressed: () => showScript(
                                                   key,
                                                   script,
@@ -488,7 +513,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                                                 running
                                                     ? Icons.stop_rounded
                                                     : Icons.play_circle_filled,
-                                                size: 28),
+                                                size: 24),
                                             onPressed: () {
                                               running
                                                   ? se?.stop()
